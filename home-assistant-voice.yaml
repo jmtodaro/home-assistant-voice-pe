@@ -195,6 +195,38 @@ switch:
     entity_category: config
     optimistic: true
     restore_mode: RESTORE_DEFAULT_ON
+  # Effect On Idle Switch.
+  - platform: template
+    id: idle_effect
+    name: Light Effect On Idle
+    icon: "mdi:plus-circle-outline"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      # If led_ring on, toggle to update effect
+      - if:
+          condition:
+            light.is_on: led_ring
+          then:
+            - light.turn_off:
+                id: led_ring
+            - delay: 500ms
+            - light.turn_on:
+                id: led_ring
+          else:
+            - light.turn_on:
+                id: led_ring
+    on_turn_off:
+      - if:
+          condition:
+            light.is_on: led_ring
+          then:
+            - light.turn_off:
+                id: led_ring
+            - delay: 500ms
+            - light.turn_on:
+                id: led_ring
   # Internal switch to track when a timer is ringing on the device.
   - platform: template
     id: timer_ringing
@@ -924,6 +956,25 @@ light:
         from: 0
         to: 6
 
+    # Activate idle effect
+    on_turn_on:
+      - if:
+          condition:
+            and:
+              - switch.is_on: idle_effect
+          then:
+            - light.turn_on:
+                id: led_ring
+                # Idle effect - must exist below
+                effect: "Twinkle"
+
+    # Expose effects
+    effects:
+      - addressable_twinkle:
+          name: "Twinkle"
+          twinkle_probability: 5%
+          progress_interval: 8ms
+
 power_supply:
   - id: led_power
     pin: GPIO45
@@ -982,6 +1033,12 @@ script:
   # This script will be called every time one of these conditions is changing.
   - id: control_leds
     then:
+      # Needed for idle effect
+      - if:
+          condition:
+            switch.is_on: idle_effect
+          then:
+            light.turn_off: led_ring
       - lambda: |
           if (id(voice_kit_component).is_failed()) {
             id(control_leds_voice_kit_startup_failed).execute();
@@ -1099,6 +1156,13 @@ script:
             light.is_on: led_ring
           then:
             light.turn_on: led_ring
+          # Needed for idle effect
+          else:
+            - if:
+                condition:
+                  switch.is_on: idle_effect
+                then:
+                  light.turn_on: led_ring
 
   # Script executed when the voice assistant is waiting for a command (After the wake word)
   # Slow clockwise spin of the LED ring.
