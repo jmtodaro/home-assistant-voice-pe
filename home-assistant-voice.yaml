@@ -1036,9 +1036,16 @@ script:
       # Needed for idle effect
       - if:
           condition:
-            switch.is_on: idle_effect
+            - switch.is_on: idle_effect
           then:
-            light.turn_off: led_ring
+            - if:
+                condition:
+                  or:
+                    - not:
+                        - lambda: return id(is_timer_active);
+                        - media_player.is_announcing
+                then:
+                  - light.turn_off: led_ring
       - lambda: |
           if (id(voice_kit_component).is_failed()) {
             id(control_leds_voice_kit_startup_failed).execute();
