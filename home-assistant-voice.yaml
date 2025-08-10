@@ -1040,10 +1040,9 @@ script:
           then:
             - if:
                 condition:
-                  or:
-                    - not:
-                        - lambda: return id(is_timer_active);
-                        - media_player.is_announcing
+                  # Prevents flicker on timer tick
+                  - not:
+                      - lambda: return id(is_timer_active);
                 then:
                   - light.turn_off: led_ring
       - lambda: |
