@@ -1515,14 +1515,10 @@ media_player:
               - lambda: return id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
           then:
             # Avoid triggering during on_listening or stt_vad_start event
-            - delay: 1100ms
+            - delay: 400ms
             - if:
                 condition:
-                  and:
-                    - not:
-                        lambda: return id(voice_assistant_phase) == ${voice_assist_waiting_for_command_phase_id};
-                    - not:
-                        lambda: return id(voice_assistant_phase) == ${voice_assist_listening_for_command_phase_id};
+                  - lambda: return id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
                 then:
                   - lambda: id(voice_assistant_phase) = ${voice_assist_replying_phase_id};
                   - script.execute: control_leds
