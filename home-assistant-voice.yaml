@@ -1048,9 +1048,8 @@ script:
           then:
             - if:
                 condition:
-                  # Prevents flicker on timer tick
-                  - not:
-                      - lambda: return id(is_timer_active);
+                  # Needed to smooth out led ring transitions
+                  - lambda: return id(voice_assistant_phase) != ${voice_assist_idle_phase_id};
                 then:
                   - light.turn_off: led_ring
       - lambda: |
