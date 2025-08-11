@@ -210,7 +210,7 @@ switch:
     icon: "mdi:plus-circle-outline"
     entity_category: config
     optimistic: true
-    restore_mode: RESTORE_DEFAULT_OFF
+    restore_mode: RESTORE_DEFAULT_ON
     on_turn_on:
       # If led_ring on, toggle to update effect
       - if:
@@ -949,7 +949,7 @@ light:
     entity_category: config
     icon: "mdi:circle-outline"
     default_transition_length: 0ms
-    restore_mode: RESTORE_DEFAULT_OFF
+    restore_mode: RESTORE_DEFAULT_ON
     initial_state:
       color_mode: rgb
       brightness: 66%
