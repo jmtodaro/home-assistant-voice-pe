@@ -968,13 +968,25 @@ light:
     on_turn_on:
       - if:
           condition:
-            and:
-              - switch.is_on: idle_effect
+            - switch.is_on: idle_effect
           then:
-            - light.turn_on:
-                id: led_ring
-                # Idle effect - must exist below
-                effect: "Twinkle"
+            if:
+              # Handle dial activity
+              condition:
+                - lambda: return id(dial_touched);
+              then:
+                - wait_until:
+                    not:
+                      - lambda: return id(dial_touched);
+                - light.turn_on:
+                    id: led_ring
+                    # Idle effect - must exist below
+                    effect: "Twinkle"
+              else:
+                - light.turn_on:
+                    id: led_ring
+                    # Idle effect - must exist below
+                    effect: "Twinkle"
 
     # Expose effects
     effects:
@@ -1046,9 +1058,15 @@ script:
           condition:
             - switch.is_on: idle_effect
           then:
+            # Handle dial activity
             - if:
                 condition:
-                  # Needed to smooth out led ring transitions
+                  - lambda: return id(dial_touched);
+                then:
+                  - light.turn_off: led_ring
+            # Needed to smooth out led ring transitions
+            - if:
+                condition:
                   - lambda: return id(voice_assistant_phase) != ${voice_assist_idle_phase_id};
                 then:
                   - light.turn_off: led_ring
