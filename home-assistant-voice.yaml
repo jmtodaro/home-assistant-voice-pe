@@ -1716,6 +1716,11 @@ voice_assistant:
   on_stt_vad_end:
     - lambda: id(voice_assistant_phase) = ${voice_assist_thinking_phase_id};
     - script.execute: control_leds
+    # Restore media sound level while thinking, nice during longer llm responses
+    - mixer_speaker.apply_ducking:
+        id: media_mixing_input
+        decibel_reduction: 0
+        duration: 1.0s
   on_intent_progress:
     - if:
         condition:
@@ -1727,6 +1732,11 @@ voice_assistant:
           # Start a script that would potentially enable the stop word if the response is longer than a second
           - script.execute: activate_stop_word_once
   on_tts_start:
+    # Reverts ducking on tts
+    - mixer_speaker.apply_ducking:
+      id: media_mixing_input
+      decibel_reduction: 20
+      duration: 0.0s
     - if:
         condition:
           # The intent_progress trigger didn't start the TTS Reponse
