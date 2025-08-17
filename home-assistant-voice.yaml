@@ -1720,7 +1720,7 @@ voice_assistant:
     - mixer_speaker.apply_ducking:
         id: media_mixing_input
         decibel_reduction: 0
-        duration: 1.0s
+        duration: 2.0s
   on_intent_progress:
     - if:
         condition:
