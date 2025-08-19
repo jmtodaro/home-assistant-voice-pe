@@ -1500,18 +1500,7 @@ script:
                 then:
                   - micro_wake_word.disable_model: stop
 
-  # Script used activate the stop word if the TTS step is long.
-  # Why is this wrapped on a script?
-  #   Becasue we want to stop the sequence if the TTS step is faster than that.
-  #   This allows us to prevent having the deactivation of the stop word before its own activation.
-  - id: activate_stop_word_if_tts_step_is_long
-    then:
-      - delay: 1s
-      # Enable stop wake word
-      - lambda: id(stop).enable();
-
   # Script to handle the end of the streaming wake word voice assistant.
-  # Should we restart it? Shall we keep it stopped?
   - id: handle_voice_assistant_end
     then:
       - if:
@@ -1521,6 +1510,31 @@ script:
             - voice_assistant.start_continuous:
           else:
             - voice_assistant.stop:
+
+  # A workaround for failed first reply after 10+ minutes of inactivity (sww bug)
+  # Watchdog restarts voice_assistant pipeline every 5 minutes upon 5 minutes of inactivity
+  - id: assistant_watchdog
+    mode: restart
+    then:
+      - if:
+          condition:
+              switch.is_off: master_mute_switch
+          then:
+            - delay: 300s
+            - if:
+                condition:
+                  and:
+                    - lambda: return id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
+                then:
+                  - voice_assistant.stop:
+                  - wait_until:
+                      condition:
+                        not:
+                          - voice_assistant.is_running
+                  - delay: 2000ms
+                  - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
+                  - voice_assistant.start_continuous:
+            - script.execute: assistant_watchdog
 
 i2s_audio:
   - id: i2s_output
@@ -1738,12 +1752,14 @@ micro_wake_word:
                 switch.is_on: timer_ringing
               then:
                 - switch.turn_off: timer_ringing
+              # Stop voice assistant if running
               else:
                 - if:
                     condition:
                       voice_assistant.is_running:
                     then:
-                      voice_assistant.stop:
+                      # voice_assistant.stop:
+                      script.execute: handle_voice_assistant_end
                     # Stop any other media player announcement
                   #  else:
                   #    - if:
@@ -1815,6 +1831,8 @@ voice_assistant:
     - voice_assistant.start_continuous:
     - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
     - script.execute: control_leds
+    # Start watchdog timer (10 min failed reply fix)
+    - script.execute: assistant_watchdog
   on_client_disconnected:
     - voice_assistant.stop:
     - lambda: id(voice_assistant_phase) = ${voice_assist_not_ready_phase_id};
@@ -1898,6 +1916,8 @@ voice_assistant:
           # Start a script that would potentially enable the stop word if the response is longer than a second
           - script.execute: activate_stop_word_once
   on_tts_start:
+    # Reset watchdog timer - (10 min failed reply fix)
+    - script.execute: assistant_watchdog
     - if:
         condition:
           # The intent_progress trigger didn't start the TTS Reponse
@@ -1908,12 +1928,10 @@ voice_assistant:
           # Start a script that would potentially enable the stop word if the response is longer than a second
           - script.execute: activate_stop_word_once
     - wait_until:
-        lambda: |-
-          return id(external_media_player)->state == media_player::MediaPlayerState::MEDIA_PLAYER_STATE_ANNOUNCING;
+        media_player.is_announcing:
     - wait_until:
         not:
-          lambda: |-
-            return id(external_media_player)->state == media_player::MediaPlayerState::MEDIA_PLAYER_STATE_ANNOUNCING;
+          media_player.is_announcing:
     - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
     - script.execute: control_leds
   # When the voice assistant ends ...
