@@ -1405,6 +1405,31 @@ script:
                 then:
                   - micro_wake_word.disable_model: stop
 
+  # A workaround for failed first reply after 10+ minutes of inactivity (sww bug)
+  # Watchdog restarts voice_assistant pipeline every 5 minutes upon 5 minutes of inactivity
+  - id: assistant_watchdog
+    mode: restart
+    then:
+      - if:
+          condition:
+              switch.is_off: master_mute_switch
+          then:
+            - delay: 300s
+            - if:
+                condition:
+                  and:
+                    - lambda: return id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
+                then:
+                  - voice_assistant.stop:
+                  - wait_until:
+                      condition:
+                        not:
+                          - voice_assistant.is_running
+                  - delay: 2000ms
+                  - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
+                  - voice_assistant.start_continuous:
+            - script.execute: assistant_watchdog
+
 i2s_audio:
   - id: i2s_output
     # i2s_output data pin is gpio10
@@ -1676,6 +1701,8 @@ voice_assistant:
     - micro_wake_word.start:
     - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
     - script.execute: control_leds
+    # Start watchdog timer (10 min failed reply fix)
+    - script.execute: assistant_watchdog
   on_client_disconnected:
     - voice_assistant.stop:
     - lambda: id(voice_assistant_phase) = ${voice_assist_not_ready_phase_id};
@@ -1727,6 +1754,8 @@ voice_assistant:
           # Start a script that would potentially enable the stop word if the response is longer than a second
           - script.execute: activate_stop_word_once
   on_tts_start:
+    # Reset watchdog timer - (10 min failed reply fix)
+    - script.execute: assistant_watchdog
     - if:
         condition:
           # The intent_progress trigger didn't start the TTS Reponse
