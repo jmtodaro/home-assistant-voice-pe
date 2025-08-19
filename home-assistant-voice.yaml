@@ -973,12 +973,12 @@ light:
                 - light.turn_on:
                     id: led_ring
                     # Idle effect - must exist below
-                    effect: "Twinkle"
+                    effect: "ZomboCom"
               else:
                 - light.turn_on:
                     id: led_ring
                     # Idle effect - must exist below
-                    effect: "Twinkle"
+                    effect: "ZomboCom"
 
     # Expose effects
     effects:
@@ -986,6 +986,12 @@ light:
           name: "Twinkle"
           twinkle_probability: 5%
           progress_interval: 8ms
+
+      # You can do anything
+      - addressable_random_twinkle:
+          name: "ZomboCom"
+          twinkle_probability: 5%
+          progress_interval: 32ms
 
 power_supply:
   - id: led_power
