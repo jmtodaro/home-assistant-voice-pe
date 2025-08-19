@@ -1734,9 +1734,9 @@ voice_assistant:
   on_tts_start:
     # Reverts ducking on tts
     - mixer_speaker.apply_ducking:
-      id: media_mixing_input
-      decibel_reduction: 20
-      duration: 0.0s
+        id: media_mixing_input
+        decibel_reduction: 20
+        duration: 0.0s
     - if:
         condition:
           # The intent_progress trigger didn't start the TTS Reponse
