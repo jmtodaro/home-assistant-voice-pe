@@ -1905,6 +1905,11 @@ voice_assistant:
   on_stt_vad_end:
     - lambda: id(voice_assistant_phase) = ${voice_assist_thinking_phase_id};
     - script.execute: control_leds
+    # Restore media sound level while thinking, nice during longer llm responses
+    - mixer_speaker.apply_ducking:
+        id: media_mixing_input
+        decibel_reduction: 0
+        duration: 2.0s
   on_intent_progress:
     - if:
         condition:
@@ -1918,6 +1923,11 @@ voice_assistant:
   on_tts_start:
     # Reset watchdog timer - (10 min failed reply fix)
     - script.execute: assistant_watchdog
+    # Reverts ducking on tts
+    - mixer_speaker.apply_ducking:
+        id: media_mixing_input
+        decibel_reduction: 20
+        duration: 0.0s
     - if:
         condition:
           # The intent_progress trigger didn't start the TTS Reponse
