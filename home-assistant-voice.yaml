@@ -1638,7 +1638,7 @@ media_player:
               - lambda: return id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
           then:
             # Avoid triggering during on_listening or stt_vad_start event
-            - delay: 400ms
+            - delay: 1000ms
             - if:
                 condition:
                   - lambda: return id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
