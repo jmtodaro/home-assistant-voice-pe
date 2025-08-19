@@ -1405,18 +1405,7 @@ script:
                 then:
                   - micro_wake_word.disable_model: stop
 
-  # Script used activate the stop word if the TTS step is long.
-  # Why is this wrapped on a script?
-  #   Becasue we want to stop the sequence if the TTS step is faster than that.
-  #   This allows us to prevent having the deactivation of the stop word before its own activation.
-  - id: activate_stop_word_if_tts_step_is_long
-    then:
-      - delay: 1s
-      # Enable stop wake word
-      - lambda: id(stop).enable();
-
   # Script to handle the end of the streaming wake word voice assistant.
-  # Should we restart it? Shall we keep it stopped?
   - id: handle_voice_assistant_end
     then:
       - if:
@@ -1623,12 +1612,14 @@ micro_wake_word:
                 switch.is_on: timer_ringing
               then:
                 - switch.turn_off: timer_ringing
+              # Stop voice assistant if running
               else:
                 - if:
                     condition:
                       voice_assistant.is_running:
                     then:
-                      voice_assistant.stop:
+                      # voice_assistant.stop:
+                      script.execute: handle_voice_assistant_end
                     # Stop any other media player announcement
                   #  else:
                   #    - if:
@@ -1793,12 +1784,10 @@ voice_assistant:
           # Start a script that would potentially enable the stop word if the response is longer than a second
           - script.execute: activate_stop_word_once
     - wait_until:
-        lambda: |-
-          return id(external_media_player)->state == media_player::MediaPlayerState::MEDIA_PLAYER_STATE_ANNOUNCING;
+        media_player.is_announcing:
     - wait_until:
         not:
-          lambda: |-
-            return id(external_media_player)->state == media_player::MediaPlayerState::MEDIA_PLAYER_STATE_ANNOUNCING;
+          media_player.is_announcing:
     - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
     - script.execute: control_leds
   # When the voice assistant ends ...
