@@ -1681,7 +1681,7 @@ media_player:
                   - script.execute: control_leds
                   - wait_until:
                       not:
-                        media_player.is_announcing:
+                        media_player.is_announcing: external_media_player
                   - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
                   - script.execute: control_leds
     on_state:
